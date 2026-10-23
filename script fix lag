@@ -1,0 +1,482 @@
+
+--==================================================
+-- MENU FIX LAG TAN DUNG V17
+-- FIX LAG V13 + TOI UU FPS + HUD FPS/MS
+-- LocalScript: StarterPlayer > StarterPlayerScripts
+--==================================================
+
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+local Stats = game:GetService("Stats")
+local UIS = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- XOA GUI CU
+local oldGui = playerGui:FindFirstChild("MenuFixLagTanDung")
+if oldGui then
+    oldGui:Destroy()
+end
+
+--==================================================
+-- TAO GUI
+--==================================================
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "MenuFixLagTanDung"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = false
+gui.DisplayOrder = 100
+gui.Parent = playerGui
+
+local function makeCorner(object, radius)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, radius or 10)
+    corner.Parent = object
+    return corner
+end
+
+local function makeStroke(object, color)
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = color or Color3.fromRGB(0, 195, 255)
+    stroke.Thickness = 1.3
+    stroke.Parent = object
+    return stroke
+end
+
+local function makeButton(parent, name, text, position, size, color)
+    local button = Instance.new("TextButton")
+    button.Name = name
+    button.Text = text
+    button.Position = position
+    button.Size = size
+    button.BackgroundColor3 = color
+        or Color3.fromRGB(30, 45, 65)
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.TextSize = 14
+    button.Font = Enum.Font.GothamBold
+    button.BorderSizePixel = 0
+    button.AutoButtonColor = true
+    button.Parent = parent
+    makeCorner(button, 8)
+    return button
+end
+
+--==================================================
+-- MENU CHINH
+--==================================================
+
+local menu = Instance.new("Frame")
+menu.Name = "MainMenu"
+menu.Size = UDim2.fromOffset(285, 225)
+menu.Position = UDim2.new(0.5, -142, 0.5, -112)
+menu.BackgroundColor3 = Color3.fromRGB(13, 19, 31)
+menu.BorderSizePixel = 0
+menu.Active = true
+menu.Parent = gui
+makeCorner(menu, 12)
+makeStroke(menu)
+
+local header = Instance.new("TextLabel")
+header.Name = "Header"
+header.Size = UDim2.new(1, -20, 0, 42)
+header.Position = UDim2.fromOffset(10, 0)
+header.BackgroundTransparency = 1
+header.Text = "MENU FIX LAG TẤN DŨNG"
+header.TextColor3 = Color3.fromRGB(0, 205, 255)
+header.TextSize = 16
+header.Font = Enum.Font.GothamBold
+header.Parent = menu
+
+local status = Instance.new("TextLabel")
+status.Size = UDim2.new(1, -20, 0, 24)
+status.Position = UDim2.fromOffset(10, 40)
+status.BackgroundTransparency = 1
+status.Text = "Trạng thái: Chưa bật"
+status.TextColor3 = Color3.fromRGB(210, 220, 235)
+status.TextSize = 12
+status.Font = Enum.Font.Gotham
+status.Parent = menu
+
+local fixButton = makeButton(
+    menu, "FixLagButton", "FIX LAG: OFF",
+    UDim2.fromOffset(15, 72),
+    UDim2.new(1, -30, 0, 38),
+    Color3.fromRGB(35, 55, 80)
+)
+
+local fpsButton = makeButton(
+    menu, "OptimizeButton", "TỐI ƯU FPS",
+    UDim2.fromOffset(15, 119),
+    UDim2.new(1, -30, 0, 38),
+    Color3.fromRGB(25, 105, 145)
+)
+
+local minimizeButton = makeButton(
+    menu, "MinimizeButton", "THU NHỎ",
+    UDim2.fromOffset(15, 168),
+    UDim2.new(0.5, -20, 0, 35),
+    Color3.fromRGB(45, 55, 75)
+)
+
+local closeButton = makeButton(
+    menu, "CloseButton", "ĐÓNG MENU",
+    UDim2.new(0.5, 5, 0, 168),
+    UDim2.new(0.5, -20, 0, 35),
+    Color3.fromRGB(135, 45, 55)
+)
+
+-- NUT MO LAI MENU
+local openButton = makeButton(
+    gui, "OpenMenuButton", "MỞ MENU",
+    UDim2.new(0, 15, 0, 120),
+    UDim2.fromOffset(105, 36),
+    Color3.fromRGB(15, 90, 130)
+)
+openButton.Visible = false
+openButton.Active = true
+
+--==================================================
+-- HAM KE0 GUI
+--==================================================
+
+local function makeDraggable(object, handle)
+    handle = handle or object
+    local dragging = false
+    local dragStart
+    local startPosition
+    local activeInput
+
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPosition = object.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    handle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch then
+            activeInput = input
+        end
+    end)
+
+    UIS.InputChanged:Connect(function(input)
+        if dragging and (
+            input.UserInputType == Enum.UserInputType.MouseMovement
+            or input == activeInput
+        ) then
+            local delta = input.Position - dragStart
+            object.Position = UDim2.new(
+                startPosition.X.Scale,
+                startPosition.X.Offset + delta.X,
+                startPosition.Y.Scale,
+                startPosition.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
+makeDraggable(menu, header)
+makeDraggable(openButton)
+
+--==================================================
+-- FIX LAG THEO CO CHE V13
+--==================================================
+
+local fixEnabled = false
+local savedParts = {}
+local oldShadows = nil
+local grayEffect = nil
+local descendantConnection = nil
+
+local function shouldSkip(part)
+    local character = player.Character
+
+    if character and part:IsDescendantOf(character) then
+        return true
+    end
+
+    if part:GetAttribute("KeepOriginal") == true then
+        return true
+    end
+
+    local name = string.lower(part.Name)
+    local skipNames = {
+        "ground", "floor", "baseplate",
+        "wall", "terrain"
+    }
+
+    for _, word in ipairs(skipNames) do
+        if string.find(name, word, 1, true) then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function optimizePart(part)
+    if not part:IsA("BasePart") then
+        return
+    end
+
+    if shouldSkip(part) or savedParts[part] then
+        return
+    end
+
+    savedParts[part] = {
+        Color = part.Color,
+        Material = part.Material,
+        LocalTransparencyModifier = part.LocalTransparencyModifier
+    }
+
+    pcall(function()
+        part.Color = Color3.fromRGB(150, 150, 150)
+        part.Material = Enum.Material.SmoothPlastic
+        part.LocalTransparencyModifier = 0.35
+    end)
+end
+
+local function enableFixLag()
+    if fixEnabled then
+        return
+    end
+
+    fixEnabled = true
+    oldShadows = Lighting.GlobalShadows
+
+    for _, object in ipairs(Workspace:GetDescendants()) do
+        optimizePart(object)
+    end
+
+    Lighting.GlobalShadows = false
+
+    grayEffect = Instance.new("ColorCorrectionEffect")
+    grayEffect.Name = "TanDungGrayEffect"
+    grayEffect.Saturation = -0.55
+    grayEffect.Parent = Lighting
+
+    descendantConnection = Workspace.DescendantAdded:Connect(function(object)
+        if fixEnabled then
+            task.defer(function()
+                if fixEnabled and object.Parent then
+                    optimizePart(object)
+                end
+            end)
+        end
+    end)
+
+    fixButton.Text = "FIX LAG: ON"
+    fixButton.BackgroundColor3 = Color3.fromRGB(25, 135, 85)
+    status.Text = "Trạng thái: Đã bật FIX LAG"
+end
+
+local function disableFixLag()
+    if not fixEnabled then
+        return
+    end
+
+    fixEnabled = false
+
+    if descendantConnection then
+        descendantConnection:Disconnect()
+        descendantConnection = nil
+    end
+
+    for part, properties in pairs(savedParts) do
+        if part and part.Parent then
+            pcall(function()
+                part.Color = properties.Color
+                part.Material = properties.Material
+                part.LocalTransparencyModifier =
+                    properties.LocalTransparencyModifier
+            end)
+        end
+    end
+
+    table.clear(savedParts)
+
+    if grayEffect then
+        grayEffect:Destroy()
+        grayEffect = nil
+    end
+
+    if oldShadows ~= nil then
+        Lighting.GlobalShadows = oldShadows
+        oldShadows = nil
+    end
+
+    fixButton.Text = "FIX LAG: OFF"
+    fixButton.BackgroundColor3 = Color3.fromRGB(35, 55, 80)
+    status.Text = "Trạng thái: Đã tắt FIX LAG"
+end
+
+fixButton.Activated:Connect(function()
+    if fixEnabled then
+        disableFixLag()
+    else
+        enableFixLag()
+    end
+end)
+
+--==================================================
+-- TOI UU FPS
+-- Ha chat luong render neu Roblox cho phep
+--==================================================
+
+local fpsOptimized = false
+local previousQuality = nil
+
+fpsButton.Activated:Connect(function()
+    if not fpsOptimized then
+        local ok, oldQuality = pcall(function()
+            return settings().Rendering.QualityLevel
+        end)
+
+        if ok then
+            previousQuality = oldQuality
+        end
+
+        local setOK = pcall(function()
+            settings().Rendering.QualityLevel =
+                Enum.QualityLevel.Level01
+        end)
+
+        fpsOptimized = true
+        fpsButton.Text = "FPS TỐI ƯU: ON"
+        fpsButton.BackgroundColor3 = Color3.fromRGB(25, 135, 85)
+
+        if setOK then
+            status.Text = "Đã yêu cầu giảm chất lượng đồ họa"
+        else
+            status.Text = "Không thể chỉnh QualityLevel ở phiên này"
+        end
+    else
+        if previousQuality ~= nil then
+            pcall(function()
+                settings().Rendering.QualityLevel = previousQuality
+            end)
+        end
+
+        previousQuality = nil
+        fpsOptimized = false
+        fpsButton.Text = "TỐI ƯU FPS"
+        fpsButton.BackgroundColor3 = Color3.fromRGB(25, 105, 145)
+        status.Text = "Đã tắt chế độ tối ưu FPS"
+    end
+end)
+
+--==================================================
+-- THU NHO / MO LAI / DONG MENU
+-- HUD FPS/MS van hien thi doc lap
+--==================================================
+
+minimizeButton.Activated:Connect(function()
+    menu.Visible = false
+    openButton.Visible = true
+end)
+
+openButton.Activated:Connect(function()
+    menu.Visible = true
+    openButton.Visible = false
+end)
+
+closeButton.Activated:Connect(function()
+    disableFixLag()
+
+    if fpsOptimized then
+        if previousQuality ~= nil then
+            pcall(function()
+                settings().Rendering.QualityLevel = previousQuality
+            end)
+        end
+        fpsOptimized = false
+        previousQuality = nil
+    end
+
+    menu.Visible = false
+    openButton.Visible = true
+end)
+
+--==================================================
+-- HUD FPS/MS BEN NGOAI MENU
+--==================================================
+
+local hud = Instance.new("Frame")
+hud.Name = "FPS_MS_HUD"
+hud.Size = UDim2.fromOffset(175, 42)
+hud.Position = UDim2.new(0, 15, 0, 70)
+hud.BackgroundColor3 = Color3.fromRGB(15, 20, 32)
+hud.BackgroundTransparency = 0.12
+hud.BorderSizePixel = 0
+hud.Active = true
+hud.Parent = gui
+makeCorner(hud, 10)
+makeStroke(hud)
+
+local hudText = Instance.new("TextLabel")
+hudText.Size = UDim2.new(1, -12, 1, 0)
+hudText.Position = UDim2.fromOffset(6, 0)
+hudText.BackgroundTransparency = 1
+hudText.Text = "FPS: -- | MS: --"
+hudText.TextColor3 = Color3.fromRGB(80, 235, 160)
+hudText.TextSize = 13
+hudText.Font = Enum.Font.GothamBold
+hudText.Active = false
+hudText.Parent = hud
+
+makeDraggable(hud)
+
+local function readPing()
+    local ok, ping = pcall(function()
+        return Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
+    end)
+
+    if ok and type(ping) == "number" then
+        return math.floor(ping + 0.5)
+    end
+
+    return nil
+end
+
+local frames = 0
+local elapsed = 0
+
+RunService.RenderStepped:Connect(function(dt)
+    frames += 1
+    elapsed += dt
+
+    if elapsed >= 1 then
+        local fps = math.floor(frames / elapsed + 0.5)
+        local ping = readPing()
+
+        hudText.Text = "FPS: " .. fps
+            .. " | MS: " .. (ping and tostring(ping) or "--")
+
+        if fps >= 55 then
+            hudText.TextColor3 = Color3.fromRGB(80, 235, 160)
+        elseif fps >= 30 then
+            hudText.TextColor3 = Color3.fromRGB(255, 205, 75)
+        else
+            hudText.TextColor3 = Color3.fromRGB(255, 90, 100)
+        end
+
+        frames = 0
+        elapsed = 0
+    end
+end)
+
+print("MENU FIX LAG TAN DUNG V17 da khoi tao!")
+
